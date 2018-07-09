@@ -37,16 +37,35 @@ func (c *CommandLine) Complete(words []string) []string {
 	return Nest(&c.Arguments, 1).Complete(partialWords[:c.cword+1])
 }
 
-func (c *CommandLine) String() string {
+func (c *CommandLine) getenv() (err error) {
+	c.line = os.Getenv("COMP_LINE")
+	c.point, err = strconv.Atoi(os.Getenv("COMP_POINT"))
+	if err != nil {
+		return
+	}
+	c.cword, err = strconv.Atoi(os.Getenv("COMP_CWORD"))
+	return
+}
+
+type CommandLineFlag CommandLine
+
+func AddFlag(flagSet *flag.FlagSet, name, desc string) *CommandLine {
+	var c CommandLine
+	flagSet.Var((*CommandLineFlag)(&c), name, desc)
+	c.Append(NewFlagSet(flagSet))
+	return &c
+}
+
+func (c *CommandLineFlag) String() string {
 	return ""
 }
 
-func (c *CommandLine) Set(mode string) error {
+func (c *CommandLineFlag) Set(_ string) error {
 	for i, w := range os.Args {
 		if w != "--" {
 			continue
 		}
-		for _, s := range c.Complete(os.Args[i+1:]) {
+		for _, s := range (*CommandLine)(c).Complete(os.Args[i+1:]) {
 			fmt.Println(s)
 		}
 		os.Exit(0)
@@ -61,23 +80,6 @@ func (c *CommandLine) Set(mode string) error {
 	return nil
 }
 
-func (c *CommandLine) IsBoolFlag() bool {
+func (c *CommandLineFlag) IsBoolFlag() bool {
 	return true
-}
-
-func AddFlag(flagSet *flag.FlagSet, name, desc string) *CommandLine {
-	var c CommandLine
-	flagSet.Var(&c, name, desc)
-	c.Append(NewFlagSet(flagSet))
-	return &c
-}
-
-func (c *CommandLine) getenv() (err error) {
-	c.line = os.Getenv("COMP_LINE")
-	c.point, err = strconv.Atoi(os.Getenv("COMP_POINT"))
-	if err != nil {
-		return
-	}
-	c.cword, err = strconv.Atoi(os.Getenv("COMP_CWORD"))
-	return
 }
