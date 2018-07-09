@@ -5,15 +5,13 @@ import (
 	"strings"
 )
 
-type FlagSet struct {
-	Arguments
-}
-
-type Flag flag.Flag
-
 type boolFlag interface {
 	flag.Value
 	IsBoolFlag() bool
+}
+
+type FlagSet struct {
+	Arguments
 }
 
 func NewFlagSet(flagSet *flag.FlagSet) *FlagSet {
@@ -34,12 +32,27 @@ func NewFlagSet(flagSet *flag.FlagSet) *FlagSet {
 	return &arg
 }
 
+type Flag struct {
+	*flag.Flag
+}
+
 func NewFlag(f *flag.Flag) *Flag {
 	if f == nil {
 		return nil
 	}
-	arg := Flag(*f)
-	return &arg
+	return &Flag{Flag: f}
+}
+
+func (f *Flag) Get() []Argument {
+	return []Argument{}
+}
+
+func (f *Flag) Set(_ []Argument) error {
+	return notImplementedError
+}
+
+func (f *Flag) Name() string {
+	return f.String()
 }
 
 func (f *Flag) Complete(words []string) []string {
@@ -54,10 +67,10 @@ func (f *Flag) Match(words []string) bool {
 }
 
 func (f *Flag) String() string {
-	return "-" + f.Name
+	return "-" + f.Flag.Name
 }
 
 func (f *Flag) IsBoolFlag() bool {
-	bf, ok := f.Value.(boolFlag)
+	bf, ok := f.Flag.Value.(boolFlag)
 	return ok && bf.IsBoolFlag()
 }
