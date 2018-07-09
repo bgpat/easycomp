@@ -1,6 +1,7 @@
 package easycomp
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -52,7 +53,7 @@ func (c *CommandLine) Set(mode string) error {
 	}
 	s, err := dumpScript(os.Args[0], strings.Join(os.Args, " "))
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	fmt.Print(s)
@@ -62,6 +63,13 @@ func (c *CommandLine) Set(mode string) error {
 
 func (c *CommandLine) IsBoolFlag() bool {
 	return true
+}
+
+func AddFlag(flagSet *flag.FlagSet, name, desc string) *CommandLine {
+	var c CommandLine
+	flagSet.Var(&c, name, desc)
+	c.Append(NewFlagSet(flagSet))
+	return &c
 }
 
 func (c *CommandLine) getenv() (err error) {
