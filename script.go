@@ -71,7 +71,7 @@ fi
 
 func dumpScript(name, cmd string) (string, error) {
 	if isatty.IsTerminal(os.Stdout.Fd()) {
-		return "", fmt.Errorf("usage:\n\tsource <(%s)", strings.Join(os.Args, " "))
+		return "", fmt.Errorf("usage:\tsource <(%s)", strings.Join(os.Args, " "))
 	}
 	t := template.Must(template.New("script").Parse(scriptTemplate))
 	obj := map[string]string{
