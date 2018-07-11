@@ -26,7 +26,7 @@ func (s *FlagSet) Complete(words []string) []string {
 }
 
 func (s *FlagSet) Match(words []string) bool {
-	return true
+	return len(words) > 0
 }
 
 type Flag struct {
@@ -62,7 +62,7 @@ func (f *Flag) Complete(words []string) []string {
 }
 
 func (f *Flag) Match(words []string) bool {
-	return true
+	return len(words) > 0
 }
 
 func (f *Flag) IsBoolFlag() bool {
