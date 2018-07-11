@@ -10,64 +10,59 @@ type boolFlag interface {
 	IsBoolFlag() bool
 }
 
-type FlagSet struct {
-	Arguments
+type FlagSet flag.FlagSet
+
+func (s *FlagSet) Children() []Argument {
+	flags := make([]Argument, 0)
+	(*flag.FlagSet)(s).VisitAll(func(f *flag.Flag) {
+		flags = append(flags, NewFlag(f, (*flag.FlagSet)(s)))
+	})
+	return flags
 }
 
-func NewFlagSet(flagSet *flag.FlagSet) *FlagSet {
-	if flagSet == nil {
-		return nil
-	}
-	var arg FlagSet
-	flagSet.VisitAll(func(f *flag.Flag) {
-		fa := NewFlag(f)
-		arg.Append(fa)
-		arg.Append(NewCondition(Nest(&arg, 1), func(words []string) bool {
-			return strings.HasPrefix(current(words), fa.String()+"=")
-		}))
-		arg.Append(NewCondition(Nest(&arg, 2), func(words []string) bool {
-			return current(words) == fa.String()
-		}))
-	})
-	return &arg
+func (s *FlagSet) Complete(words []string) []string {
+	args := Arguments(s.Children())
+	return args.Complete(words)
+}
+
+func (s *FlagSet) Match(words []string) bool {
+	return true
 }
 
 type Flag struct {
 	*flag.Flag
+	flagSet *flag.FlagSet
 }
 
-func NewFlag(f *flag.Flag) *Flag {
-	if f == nil {
-		return nil
+func NewFlag(f *flag.Flag, s *flag.FlagSet) *Flag {
+	return &Flag{f, s}
+}
+
+func (f *Flag) Children() []Argument {
+	return []Argument{
+		NewString("-" + f.Flag.Name),
+		NewCondition(
+			Nest((*FlagSet)(f.flagSet), 1),
+			func(words []string) bool {
+				return strings.HasPrefix(current(words), "-"+f.Name+"=")
+			},
+		),
+		NewCondition(
+			Nest((*FlagSet)(f.flagSet), 2),
+			func(words []string) bool {
+				return current(words) == "-"+f.Name
+			},
+		),
 	}
-	return &Flag{Flag: f}
-}
-
-func (f *Flag) Get() []Argument {
-	return []Argument{}
-}
-
-func (f *Flag) Set(_ []Argument) error {
-	return notImplementedError
-}
-
-func (f *Flag) Name() string {
-	return f.String()
 }
 
 func (f *Flag) Complete(words []string) []string {
-	if len(words) == 1 {
-		return []string{f.String()}
-	}
-	return nil
+	args := Arguments(f.Children())
+	return args.Complete(words)
 }
 
 func (f *Flag) Match(words []string) bool {
-	return strings.HasPrefix(f.String(), current(words))
-}
-
-func (f *Flag) String() string {
-	return "-" + f.Flag.Name
+	return true
 }
 
 func (f *Flag) IsBoolFlag() bool {

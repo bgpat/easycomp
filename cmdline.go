@@ -47,20 +47,18 @@ func (c *CommandLine) getenv() (err error) {
 	return
 }
 
-type CommandLineFlag CommandLine
-
 func AddFlag(flagSet *flag.FlagSet, name, desc string) *CommandLine {
 	var c CommandLine
-	flagSet.Var((*CommandLineFlag)(&c), name, desc)
-	c.Append(NewFlagSet(flagSet))
+	flagSet.Var(&c, name, desc)
+	c.Append((*FlagSet)(flagSet))
 	return &c
 }
 
-func (c *CommandLineFlag) String() string {
+func (c *CommandLine) String() string {
 	return ""
 }
 
-func (c *CommandLineFlag) Set(_ string) error {
+func (c *CommandLine) Set(_ string) error {
 	for i, w := range os.Args {
 		if w != "--" {
 			continue
@@ -80,6 +78,6 @@ func (c *CommandLineFlag) Set(_ string) error {
 	return nil
 }
 
-func (c *CommandLineFlag) IsBoolFlag() bool {
+func (c *CommandLine) IsBoolFlag() bool {
 	return true
 }
