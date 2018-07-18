@@ -1,9 +1,7 @@
 package easycomp
 
 import (
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -17,11 +15,9 @@ type CommandLine struct {
 }
 
 func (c *CommandLine) Complete(words []string) []string {
-	if err := c.getenv(); err != nil {
-		log.Fatal(err)
-	}
+	c.getenv()
 	var partialWords []string
-	if len(words) < c.cword || len(c.line) < c.point {
+	if c.cword < 1 || len(words) < c.cword || len(c.line) < c.point {
 		partialWords = words
 	} else {
 		partialWords = words[:c.cword]
@@ -34,24 +30,13 @@ func (c *CommandLine) Complete(words []string) []string {
 			}
 		}
 	}
-	return Nest(&c.Arguments, 1).Complete(partialWords[:c.cword+1])
+	return c.Arguments.Complete(partialWords[:c.cword+1])
 }
 
-func (c *CommandLine) getenv() (err error) {
+func (c *CommandLine) getenv() {
 	c.line = os.Getenv("COMP_LINE")
-	c.point, err = strconv.Atoi(os.Getenv("COMP_POINT"))
-	if err != nil {
-		return
-	}
-	c.cword, err = strconv.Atoi(os.Getenv("COMP_CWORD"))
-	return
-}
-
-func AddFlag(flagSet *flag.FlagSet, name, desc string) *CommandLine {
-	var c CommandLine
-	flagSet.Var(&c, name, desc)
-	c.Append((*FlagSet)(flagSet))
-	return &c
+	c.point, _ = strconv.Atoi(os.Getenv("COMP_POINT"))
+	c.cword, _ = strconv.Atoi(os.Getenv("COMP_CWORD"))
 }
 
 func (c *CommandLine) String() string {
@@ -63,9 +48,7 @@ func (c *CommandLine) Set(_ string) error {
 		if w != "--" {
 			continue
 		}
-		for _, s := range (*CommandLine)(c).Complete(os.Args[i+1:]) {
-			fmt.Println(s)
-		}
+		c.run(os.Args[i+1:])
 		os.Exit(0)
 	}
 	s, err := dumpScript(os.Args[0], strings.Join(os.Args, " "))
@@ -80,4 +63,15 @@ func (c *CommandLine) Set(_ string) error {
 
 func (c *CommandLine) IsBoolFlag() bool {
 	return true
+}
+
+func (c *CommandLine) Type() string {
+	return ""
+}
+
+func (c *CommandLine) run(args []string) {
+	debugCompletion(c, args)
+	for _, s := range c.Complete(args) {
+		fmt.Println(s)
+	}
 }

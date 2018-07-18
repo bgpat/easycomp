@@ -4,6 +4,7 @@ type Argument interface {
 	Children() []Argument
 	Complete([]string) []string
 	Match([]string) bool
+	String() string
 }
 
 type Arguments []Argument
@@ -12,9 +13,8 @@ func (a *Arguments) Children() []Argument {
 	return *a
 }
 
-func (a *Arguments) Append(arg Argument) error {
+func (a *Arguments) Append(arg Argument) {
 	*a = append(*a, arg)
-	return nil
 }
 
 func (a *Arguments) Complete(words []string) []string {
@@ -28,7 +28,11 @@ func (a *Arguments) Complete(words []string) []string {
 }
 
 func (a *Arguments) Match(_ []string) bool {
-	return true
+	return len(*a) > 0
+}
+
+func (a *Arguments) String() string {
+	return ""
 }
 
 type Nester struct {
