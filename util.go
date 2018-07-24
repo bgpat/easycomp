@@ -60,8 +60,8 @@ func toTree(arg Argument, words []string, depth int) *Tree {
 		return &Tree{Type: "too deep"}
 	}
 	c := make([]*Tree, 0)
-	if _, ok := arg.(*Nester); ok {
-		words = words[1:]
+	if t, ok := arg.(*Transform); ok {
+		words = t.Transform(words)
 	}
 	for _, a := range arg.Children() {
 		tree := toTree(a, words, depth-1)

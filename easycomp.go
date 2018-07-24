@@ -35,26 +35,40 @@ func (a *Arguments) String() string {
 	return ""
 }
 
-type Nester struct {
+type Transform struct {
 	Argument
+	fn func([]string) []string
+}
+
+func NewTransform(arg Argument, fn func([]string) []string) *Transform {
+	return &Transform{Argument: arg, fn: fn}
 }
 
 func Nest(arg Argument, depth int) Argument {
 	if depth == 0 {
 		return arg
 	}
-	return &Nester{Argument: Nest(arg, depth-1)}
+	return NewTransform(
+		Nest(arg, depth-1),
+		func(words []string) []string {
+			if len(words) < 1 {
+				return []string{}
+			}
+			return words[1:]
+		},
+	)
 }
 
-func (n *Nester) Complete(words []string) []string {
-	if len(words) < 1 {
-		return nil
-	}
-	return n.Argument.Complete(words[1:])
+func (t *Transform) Transform(words []string) []string {
+	return t.fn(words)
 }
 
-func (n *Nester) Match(words []string) bool {
-	return len(words) >= 1
+func (t *Transform) Complete(words []string) []string {
+	return t.Argument.Complete(t.Transform(words))
+}
+
+func (t *Transform) Match(words []string) bool {
+	return len(t.Transform(words)) >= 1
 }
 
 type Condition struct {
